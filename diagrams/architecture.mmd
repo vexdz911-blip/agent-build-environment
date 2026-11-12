@@ -1,0 +1,14 @@
+flowchart TD
+    User["Builder — configures the agent in the console"] --> Spec["abe-spec: sandbox class, sizing, replicas, network policy"]
+    Spec --> AX["AX — Agent Executor<br/>ax.yaml: Workspace + Task, ax apply"]
+    AX --> Substrate["Agent Substrate<br/>substrate.yaml: sandbox lifecycle, snapshots"]
+    Substrate --> Cluster{"Cluster target"}
+    Cluster -->|local / CI| Kind["kind — Kubernetes IN Docker"]
+    Cluster -->|production| Existing["Existing KVM-capable cluster"]
+    Kind --> SandboxClass
+    Existing --> SandboxClass
+    SandboxClass{"Sandbox class"} -->|gvisor| GVisor["gVisor sandbox<br/>runsc OCI runtime, Sentry userspace kernel<br/>any standard Linux node"]
+    SandboxClass -->|microvm| MicroVM["MicroVM sandbox<br/>Kata Containers on Cloud Hypervisor<br/>needs /dev/kvm, whole-vCPU sizing, 128 MiB minimum"]
+    GVisor --> Agent["Agent sandbox<br/>workspace mounted, snapshots on stop"]
+    MicroVM --> Agent
+    Agent --> Endpoint["Agent endpoint<br/>ax get agent — ready, resumable from snapshot"]
