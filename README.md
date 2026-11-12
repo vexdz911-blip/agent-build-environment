@@ -21,3 +21,23 @@ The console's load, render, layout, and default-state consistency are checked. C
 ## Deployment
 
 This repository is published with GitHub Pages via the workflow in `.github/workflows/pages.yml`, which deploys the repository root on every push to `main`.
+
+## Diagrams (Mermaid API)
+
+Diagram sources live in `diagrams/` as Mermaid code (`.mmd`) and are rendered to SVG with the [Mermaid API](https://api.mermaid.ai/v1/docs) by `tools/render-mermaid.py` — no local Mermaid install needed.
+
+```bash
+export MERMAID_API_KEY=<your key>     # read from the environment only —
+                                      # never commit it or put it in a file
+python3 tools/render-mermaid.py --balance                  # free: balance + endpoint costs
+python3 tools/render-mermaid.py diagrams/architecture.mmd  # writes diagrams/architecture.svg
+```
+
+How it behaves:
+
+- The key is read from the `MERMAID_API_KEY` environment variable and sent only as the `Authorization: Bearer` header. It never appears in code, config, logs, or output.
+- Every run checks `GET /v1/balance` first (free). Before a batch it estimates the total cost and refuses to start if the remaining balance can't cover it.
+- Each diagram is validated before rendering: validation costs 1 credit, a render 5 — and a diagram the parser refuses *at render time* still costs the full 5, so invalid diagrams are caught at the validate step and never sent to the renderer.
+- Requests refused before any work (missing/invalid key, malformed body) cost nothing.
+- Output lands next to the source (`architecture.mmd` → `architecture.svg`); `--format png|pdf` and `--out DIR` are supported.
+
